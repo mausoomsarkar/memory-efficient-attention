@@ -35,6 +35,7 @@ pip install memory-efficient-attention[testing]
 
 ```python
 import numpy as np
+import time
 # for PyTorch
 from memory_efficient_attention import efficient_dot_product_attention_pt
 # or for Jax
@@ -42,17 +43,27 @@ from memory_efficient_attention import efficient_dot_product_attention_jax
 
 # Random Data (batch dimensions are not necessary)
 b = 8
-query = np.random.rand(1, b, 128, 16, 8).astype("float32")
-key = np.random.rand(1, b, 128, 16, 8).astype("float32")
-value = np.random.rand(1, b, 128, 16, 8).astype("float32")
+query = torch.tensor(np.random.rand(1, b, 128, 16, 8).astype("float32"))
+key = torch.tensor(np.random.rand(1, b, 128, 16, 8).astype("float32"))
+value = torch.tensor(np.random.rand(1, b, 128, 16, 8).astype("float32"))
 # optional, for casual tasks, ...
-mask = np.random.rand(1, b, 16, 128, 128) > 0.5
-bias = np.random.rand(1, b, 16, 128, 128).astype("float32") / 100
+mask = torch.tensor(np.random.rand(1, b, 16, 128, 128) > 0.5)
+bias = torch.tensor(np.random.rand(1, b, 16, 128, 128).astype("float32") / 100)
 
-# Adjust chunk sizes        
-efficient_dot_product_attention_jax(query, key, value, mask, bias, key_chunk_size=..., query_chunk_size=...)
-```
+# Time attention chunking        
+def timit(repeats=10,key_chunk_size=128, query_chunk_size=128):
+    total_time_simp=0.0
+    repeats=10
+    for _ in range(repeats):
+        start = time.time()
+        out=efficient_dot_product_attention_pt(query, key, value, mask, bias, key_chunk_size=key_chunk_size, query_chunk_size=query_chunk_size)
+        total_time_simp += (time.time() - start)
+    ############
+    total_time_simp= total_time_simp / repeats
+    print('attention took:', total_time_simp)
 
+
+timit(100,128,32)
 ## Citation
 Please cite if this implementation helps your research. You can use the following BibTeX entry:
 
